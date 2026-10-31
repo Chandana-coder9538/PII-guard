@@ -16,6 +16,7 @@ public class MaskAction implements Action {
             case AADHAAR: return "XXXX XXXX " + lastDigits(v, 4);
             case PHONE:   return "XXXXXX" + lastDigits(v, 4);
             case CARD:    return "XXXX-XXXX-XXXX-" + lastDigits(v, 4);
+            case CUSTOM: return v.replaceAll("[\\p{L}\\p{N}]", "X");
             case NAME: {
                 StringBuilder sb = new StringBuilder();
                 for (String w : v.trim().split("\\s+")) {
