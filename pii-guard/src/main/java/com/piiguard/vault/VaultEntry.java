@@ -1,7 +1,14 @@
 package com.piiguard.vault;
 
-import jakarta.persistence.*;
 import java.time.Instant;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "vault_entry", indexes = {
@@ -22,4 +29,5 @@ public class VaultEntry {
     public String getToken() { return token; }
     public String getPiiType() { return piiType; }
     public byte[] getValueCipher() { return valueCipher; }
+    public Instant getCreatedAt() { return createdAt; }
 }
