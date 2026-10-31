@@ -1,0 +1,16 @@
+{
+  "name": "vendor-share-v2-free-text",
+  "rules": [
+    { "type": "AADHAAR", "action": "TOKENIZE" },
+    { "type": "PHONE",   "action": "MASK" },
+    { "type": "EMAIL",   "action": "HASH" },
+    { "type": "PAN",     "action": "REDACT" },
+    { "type": "CARD",    "action": "MASK" },
+    { "type": "IFSC",    "action": "REDACT" },
+    { "type": "IPV4",    "action": "HASH" },
+    { "type": "NAME",    "action": "MASK", "columns": ["name", "customer_name", "full_name"] },
+    { "type": "CUSTOM",  "action": "REDACT",
+      "patterns": ["salary\\s*(of|is|:)?\\s*\\S+", "diagnos\\w*[^,.;]*", "\\bloan\\b[^,.;]*",
+                   "password\\s*[:=]\\s*\\S+", "\\b\\d{6}\\b"] }
+  ]
+}
