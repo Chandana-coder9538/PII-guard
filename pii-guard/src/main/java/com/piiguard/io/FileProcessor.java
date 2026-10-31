@@ -11,7 +11,9 @@ import org.apache.commons.csv.CSVRecord;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /** Streaming processors: one row / one line at a time, never the whole file in memory. */
 public class FileProcessor {
@@ -33,10 +35,10 @@ public class FileProcessor {
                 rows++;
                 int before = audit.total();
                 List<String> cells = new ArrayList<>(headers.size());
-                for (String h : headers) {
-                    String v = rec.isMapped(h) && rec.isSet(h) ? rec.get(h) : "";
-                    cells.add(engine.process(v, recipe, h, rows, audit));
-                }
+                Map<String, String> row = new LinkedHashMap<>();
+                for (String h : headers) row.put(h, rec.isMapped(h) && rec.isSet(h) ? rec.get(h) : "");
+                List<String> known = engine.knownNames(recipe, row);
+                for (String h : headers) cells.add(engine.process(row.get(h), recipe, h, rows, audit, known));
                 if (audit.total() > before) withPii++;
                 printer.printRecord(cells);
             }
