@@ -5,148 +5,292 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PII Guard</title>
 <style>
-  :root { --bg:#f7f8fa; --card:#fff; --text:#1c2330; --muted:#667085; --line:#e4e7ec; --accent:#1f6feb; --ok:#1a7f37; --bad:#c62828; --code:#f2f4f7; }
-  @media (prefers-color-scheme: dark) {
-    :root { --bg:#10141b; --card:#171c25; --text:#e6e9ef; --muted:#9aa4b2; --line:#2a3140; --accent:#58a6ff; --ok:#3fb950; --bad:#f85149; --code:#0d1117; }
-  }
-  * { box-sizing: border-box; }
-  body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background:var(--bg); color:var(--text); }
-  header { padding:20px 24px; border-bottom:1px solid var(--line); background:var(--card); }
-  header h1 { margin:0; font-size:20px; } header p { margin:4px 0 0; color:var(--muted); font-size:14px; }
-  main { max-width:1100px; margin:0 auto; padding:20px; display:grid; gap:16px; }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px; }
-  .card h2 { margin:0 0 10px; font-size:16px; }
-  .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  @media (max-width:800px) { .grid { grid-template-columns:1fr; } }
-  textarea { width:100%; min-height:160px; font-family:ui-monospace, Menlo, Consolas, monospace; font-size:13px; padding:10px;
-    border:1px solid var(--line); border-radius:8px; background:var(--code); color:var(--text); resize:vertical; }
-  label { font-size:12px; color:var(--muted); display:block; margin-bottom:4px; }
-  button { background:var(--accent); color:#fff; border:0; border-radius:8px; padding:9px 16px; font-size:14px; cursor:pointer; }
-  button.secondary { background:transparent; color:var(--accent); border:1px solid var(--accent); }
-  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:10px; }
-  table { width:100%; border-collapse:collapse; font-size:13px; margin-top:8px; }
-  th, td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); }
-  .pill { display:inline-block; padding:2px 8px; border-radius:99px; font-size:12px; border:1px solid var(--line); }
-  .ok { color:var(--ok); } .bad { color:var(--bad); }
-  pre { margin:0; white-space:pre-wrap; word-break:break-word; }
-  a { color:var(--accent); }
+:root{--canvas:#eceef2;--panel:#fff;--ink:#0f1115;--mute:#5d6472;--line:#d9dce3;--code:#f4f5f8;--side:#0f1115;--sideink:#e9eaee;--sidemute:#8b91a0;
+--stamp:#d6361f;--mask:#2563eb;--hash:#b45309;--tok:#0f766e;--red:#0f1115;--hl:#ffe27a;--ok:#16803c;--bad:#d6361f;--iv:#b45309;--ct:#2563eb;--tag:#16803c;
+--serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;--mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;--sh:0 1px 2px rgba(15,17,21,.06),0 8px 24px rgba(15,17,21,.06)}
+@media(prefers-color-scheme:dark){:root{--canvas:#0a0b0e;--panel:#15171c;--ink:#eceef2;--mute:#9aa1b0;--line:#272a33;--code:#0e1014;--side:#101216;--stamp:#ff6b57;
+--mask:#6ea0ff;--hash:#f0a64a;--tok:#3ccfbd;--red:#eceef2;--hl:#6b5a10;--ok:#4cd37e;--bad:#ff7b6b;--iv:#f0a64a;--ct:#6ea0ff;--tag:#4cd37e;--sh:0 0 0 1px #272a33}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--canvas);color:var(--ink);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+:focus-visible{outline:2px solid var(--stamp);outline-offset:2px}
+.app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+aside{background:var(--side);color:var(--sideink);padding:26px 18px;display:flex;flex-direction:column;gap:30px;position:sticky;top:0;height:100vh;border-right:1px solid #000}
+.brand{display:flex;gap:12px;align-items:center}
+.brand b{font:600 21px var(--serif);display:block;line-height:1.1}.brand small{color:var(--sidemute);font-size:12px}
+nav{display:flex;flex-direction:column;gap:4px}
+[role=tab]{display:flex;gap:12px;align-items:center;background:none;border:0;border-radius:10px;color:var(--sidemute);padding:11px 12px;font:inherit;text-align:left;cursor:pointer}
+[role=tab] i{font:normal 12px var(--mono);width:22px;color:var(--sidemute)}
+[role=tab]:hover{color:var(--sideink)}
+[role=tab][aria-selected=true]{background:#1d2027;color:#fff;box-shadow:inset 3px 0 0 var(--stamp)}
+[role=tab][aria-selected=true] i{color:var(--stamp)}
+.vault{margin-top:auto;border:1px solid #262a33;border-radius:12px;padding:12px;font-size:12.5px;color:var(--sidemute)}
+.vault b{display:block;color:var(--sideink);font-size:13px;margin-bottom:2px}
+main{padding:38px clamp(18px,4vw,56px) 70px;max-width:1180px;width:100%}
+.panel[hidden]{display:none}
+h1{font:600 clamp(28px,4vw,40px)/1.1 var(--serif);margin:0 0 8px;letter-spacing:-.01em}
+h1::after{content:"";display:block;width:56px;height:8px;background:var(--ink);margin-top:14px;border-radius:2px}
+h2{font:600 20px var(--serif);margin:0 0 4px}
+.lead{color:var(--mute);margin:14px 0 26px;max-width:66ch}
+.card{background:var(--panel);border-radius:16px;padding:20px;margin-bottom:18px;box-shadow:var(--sh)}
+label{display:block;font-size:13px;color:var(--mute);margin-bottom:6px}
+textarea,input[type=text],input[type=password]{width:100%;font:13px/1.55 var(--mono);padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--code);color:var(--ink)}
+textarea{min-height:110px;resize:vertical}
+.btn{background:var(--ink);color:var(--canvas);border:0;border-radius:10px;padding:11px 20px;font:600 14px inherit;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.ghost{background:none;color:var(--ink);border:1px solid var(--line)}
+.btn:disabled{opacity:.5;cursor:wait}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.pipe{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-bottom:18px;border-radius:16px;overflow:hidden;box-shadow:var(--sh);background:var(--panel)}
+.stage{padding:16px 18px 16px 34px;position:relative;border-right:1px solid var(--line)}
+.stage:last-child{border:0}
+.stage::before{content:"";position:absolute;left:14px;top:22px;width:10px;height:10px;border-radius:50%;background:var(--line)}
+.stage.live::before{background:var(--ink)}.stage.okc::before{background:var(--ok)}.stage.badc::before{background:var(--bad)}
+.stage i{font:normal 12px var(--mono);color:var(--mute)}
+.stage b{display:block;font:600 30px/1.15 var(--serif)}.stage span{font-size:13px;color:var(--mute)}
+.sheets{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+.sheet{background:var(--panel);border-radius:6px 6px 16px 16px;box-shadow:var(--sh);border-top:6px solid var(--ink)}
+.sheet.out{border-top-color:var(--stamp)}
+.sheet h3{margin:0;padding:14px 18px 0;font:600 14px system-ui}
+.sheet h3 small{font-weight:400;color:var(--mute);margin-left:6px}
+.doc{font:13px/2 var(--mono);white-space:pre-wrap;word-break:break-word;padding:10px 18px 20px;min-height:120px}
+mark{background:var(--hl);color:inherit;border-radius:3px;padding:2px 3px}
+mark small{font:600 10px system-ui;margin-left:4px;opacity:.7}
+mark.none{background:none;outline:2px dashed var(--bad)}
+.chip{border-radius:4px;padding:2px 5px;font-weight:600;color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);border:0;font:inherit;font-weight:600}
+.chip.mask{--c:var(--mask)}.chip.hash{--c:var(--hash)}.chip.tok{--c:var(--tok);cursor:pointer;text-decoration:underline dotted}
+.chip.red{background:var(--red);color:var(--canvas)}
+.pill{font:600 11px system-ui;padding:3px 9px;border-radius:99px;color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent)}
+.pill.mask{--c:var(--mask)}.pill.hash{--c:var(--hash)}.pill.tokenize{--c:var(--tok)}.pill.redact{--c:var(--ink)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line)}th{color:var(--mute);font-weight:500;font-size:13px}
+.ok{color:var(--ok)}.bad{color:var(--bad)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:16px}
+.tile{background:var(--code);border-radius:12px;padding:12px 16px}.tile b{display:block;font:600 26px var(--serif)}.tile span{font-size:13px;color:var(--mute)}
+code{font-family:var(--mono);font-size:12.5px;word-break:break-all}
+.drop{border:2px dashed var(--line);border-radius:14px;padding:34px;text-align:center}
+.lab{display:grid;grid-template-columns:340px 1fr;gap:18px;align-items:start}
+.seg{display:grid;gap:6px;margin-top:6px}
+.seg label{margin:0;border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;color:var(--ink);font-size:14px}
+.seg label small{display:block;color:var(--mute)}.seg input{position:absolute;opacity:0}
+.seg label:has(input:checked){border-color:var(--ink);box-shadow:inset 3px 0 0 var(--stamp);background:var(--code)}
+.seg label:has(input:focus-visible){outline:2px solid var(--stamp)}
+.anat{display:flex;height:36px;border-radius:10px;overflow:hidden;margin-bottom:8px;font:600 11px system-ui;color:#fff}
+.anat div{display:flex;align-items:center;justify-content:center;min-width:48px;white-space:nowrap}
+.anat .iv{background:var(--iv)}.anat .ct{background:var(--ct)}.anat .tag{background:var(--tag)}
+ol.steps{list-style:none;margin:14px 0 0;padding:0}
+.step{display:grid;grid-template-columns:30px 1fr;gap:14px;padding-bottom:22px;position:relative}
+.step:not(:last-child)::before{content:"";position:absolute;left:14px;top:30px;bottom:0;width:2px;background:var(--line)}
+.step .n{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font:600 13px system-ui;border:2px solid var(--line);color:var(--mute);background:var(--panel);z-index:1}
+.step.ok .n{background:var(--ok);border-color:var(--ok);color:#fff}.step.fail .n{background:var(--bad);border-color:var(--bad);color:#fff}
+.step.skipped{opacity:.5}
+.step h3{margin:3px 0 0;font:600 16px var(--serif)}.step h3 em{font:12px system-ui;color:var(--mute);margin-left:8px}
+.step p{margin:2px 0 8px;color:var(--mute);font-size:14px}
+dl{display:grid;grid-template-columns:140px 1fr;gap:4px 12px;margin:0;font-size:13px;background:var(--code);border-radius:10px;padding:10px 12px}
+dt{color:var(--mute)}dd{margin:0;font:12.5px var(--mono);word-break:break-all}
+dd.iv{color:var(--iv)}dd.ct{color:var(--ct)}dd.tag{color:var(--tag)}
+.out{margin-top:6px;padding:16px;border-radius:12px;background:var(--code)}
+.out.bad{box-shadow:inset 3px 0 0 var(--bad)}
+.reveal{position:relative;display:inline-block;padding:6px 14px;border-radius:6px;background:var(--code)}
+.reveal code{font-size:22px}
+.reveal i{position:absolute;inset:0;background:var(--ink);transform-origin:right;transition:transform .9s cubic-bezier(.7,0,.2,1);border-radius:6px}
+.reveal.open i{transform:scaleX(0)}
+.note{font-size:13px;color:var(--mute);margin-top:12px}
+@media(max-width:960px){.app{grid-template-columns:1fr}aside{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:12px;padding:14px 16px}
+nav{flex-direction:row;flex-wrap:wrap}.vault{display:none}.sheets,.lab{grid-template-columns:1fr}.pipe{grid-template-columns:1fr 1fr}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
-<header>
-  <h1>PII Guard</h1>
-  <p>Detect, mask, hash or tokenize PII before data leaves the company. Audit trail included.</p>
-</header>
+<div class="app">
+<aside>
+  <div class="brand">
+    <svg width="34" height="34" viewBox="0 0 30 30" aria-hidden="true"><rect x="5" y="2" width="20" height="26" rx="3" fill="none" stroke="#fff" stroke-width="2"/><rect x="9" y="8" width="12" height="3.5" rx="1.5" fill="#d6361f"/><rect x="9" y="14" width="12" height="3.5" rx="1.5" fill="#fff" opacity=".4"/><rect x="9" y="20" width="7" height="3.5" rx="1.5" fill="#fff" opacity=".4"/></svg>
+    <div><b>PII Guard</b><small>Privacy console</small></div>
+  </div>
+  <nav role="tablist" aria-label="Sections">
+    <button role="tab" data-tab="text" aria-selected="true"><i>01</i>Mask text</button>
+    <button role="tab" data-tab="file" aria-selected="false"><i>02</i>Mask a file</button>
+    <button role="tab" data-tab="recipe" aria-selected="false"><i>03</i>Recipe</button>
+    <button role="tab" data-tab="lab" aria-selected="false"><i>04</i>Decryption lab</button>
+  </nav>
+  <div class="vault"><b>Token vault</b>AES-256-GCM. Only the admin key can reverse a token.</div>
+</aside>
 <main>
-  <section class="card">
-    <h2>1. Mask text or logs</h2>
-    <div class="grid">
-      <div><label>Input</label><textarea id="inText"></textarea></div>
-      <div><label>Masked output</label><textarea id="outText" readonly></textarea></div>
-    </div>
-    <div class="row">
-      <button id="btnMask">Mask text</button>
-      <span id="textStatus" class="pill" style="display:none"></span>
-    </div>
-    <div id="textSummary"></div>
-  </section>
+<section class="panel" id="p-text">
+  <h1>Mask text</h1>
+  <p class="lead">Paste text or logs. See what was found, what gets shared, and whether anything is left behind.</p>
+  <div class="card">
+    <label for="inText">Text to check</label>
+    <textarea id="inText"></textarea>
+    <div class="row"><button class="btn" id="btnMask">Mask text</button></div>
+  </div>
+  <div id="stats"></div>
+  <div class="sheets" id="results" hidden>
+    <div class="sheet"><h3>Source<small>dashed outline: not handled by the recipe</small></h3><div class="doc" id="orig"></div></div>
+    <div class="sheet out"><h3>Shared copy<small>click a token to decrypt it</small></h3><div class="doc" id="masked"></div></div>
+  </div>
+  <div id="summary"></div>
+</section>
 
-  <section class="card">
-    <h2>2. Mask a file (CSV or log)</h2>
-    <div class="row">
-      <input type="file" id="file" accept=".csv,.txt,.log,.json">
-      <button id="btnFile">Upload and mask</button>
-    </div>
-    <div id="jobBox"></div>
-  </section>
+<section class="panel" id="p-file" hidden>
+  <h1>Mask a file</h1>
+  <p class="lead">CSV and log files are processed row by row with the recipe. You get the masked file and an audit trail that never contains raw values.</p>
+  <div class="card"><div class="drop"><input type="file" id="file" accept=".csv,.txt,.log,.json" aria-label="File to mask">
+    <div class="row" style="justify-content:center"><button class="btn" id="btnFile">Upload and mask</button></div></div>
+    <div id="jobBox"></div></div>
+</section>
 
-  <section class="card">
-    <h2>Recipe (JSON)</h2>
-    <label>Each rule: type (AADHAAR, PHONE, EMAIL, PAN, IFSC, CARD, IPV4, NAME), action (MASK, HASH, TOKENIZE, REDACT), optional columns</label>
-    <textarea id="recipe" style="min-height:240px"></textarea>
-    <div class="row"><button class="secondary" id="btnReset">Reset to default</button></div>
-  </section>
+<section class="panel" id="p-recipe" hidden>
+  <h1>Recipe</h1>
+  <p class="lead">One rule per type of PII. Rules with columns apply to those CSV columns only. CUSTOM rules take a list of words or regex in "patterns" for free text.</p>
+  <div class="card"><h2>Rules at a glance</h2>
+    <table><tr><th>Type</th><th>Action</th><th>Applies to</th></tr><tbody id="rules"></tbody></table></div>
+  <div class="card">
+    <label for="recipe">Recipe JSON. Actions: MASK, HASH, TOKENIZE, REDACT.</label>
+    <textarea id="recipe" style="min-height:300px"></textarea>
+    <div class="row"><button class="btn ghost" id="btnReset">Reset to default</button></div>
+  </div>
+</section>
 
-  <section class="card">
-    <h2>Detokenize (privileged)</h2>
-    <div class="row">
-      <input id="token" placeholder="TKN_AADHAAR_..." size="30">
-      <input id="apikey" placeholder="X-API-Key" type="password" size="20">
-      <button class="secondary" id="btnDetok">Reveal original</button>
+<section class="panel" id="p-lab" hidden>
+  <h1>Decryption lab</h1>
+  <p class="lead">Only tokenized values can be reversed. Run the real decryption and watch each step, including how a wrong key or edited data is stopped.</p>
+  <div class="lab">
+    <div class="card">
+      <label for="token">Token</label><input type="text" id="token" placeholder="TKN_AADHAAR_...">
+      <label for="apikey" style="margin-top:12px">Admin key (X-API-Key)</label><input type="password" id="apikey" autocomplete="off">
+      <div class="seg" role="radiogroup" aria-label="Scenario" style="margin-top:14px">
+        <label><input type="radio" name="sc" value="authorized" checked>Authorized request<small>Right key, untouched data</small></label>
+        <label><input type="radio" name="sc" value="wrong-key">Wrong key<small>Right data, different secret</small></label>
+        <label><input type="radio" name="sc" value="tampered">Edited data<small>One bit changed in a memory copy</small></label>
+      </div>
+      <div class="row"><button class="btn" id="btnLab">Run decryption</button></div>
+      <p class="note">An empty or wrong admin key shows access denied. The wrong-key and edited-data runs never change the vault.</p>
     </div>
-    <div id="detokOut" style="margin-top:8px"></div>
-  </section>
+    <div class="card">
+      <div id="anat" class="anat" hidden></div>
+      <div id="labOut" aria-live="polite"><span class="note">Pick a token from Mask text, or paste one, then run.</span></div>
+      <ol class="steps" id="steps"></ol>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Restore a whole file</h2>
+    <p class="note" style="margin-top:4px">Upload a masked file to get the originals back. Only tokenized values (TKN_...) are restored. Uses the admin key above.</p>
+    <input type="file" id="rfile" accept=".csv,.txt,.log,.json" aria-label="Masked file to restore">
+    <div class="row"><button class="btn" id="btnRestore">Restore file</button></div>
+    <p class="note" id="restoreMsg" aria-live="polite"></p>
+  </div>
+</section>
 </main>
-
+</div>
 <script>
-const $ = id => document.getElementById(id);
-const SAMPLE = "2024-10-31 INFO user=Ravi Kumar email=ravi.k@example.com phone=+91 98765 43210 login from 10.20.30.40\n" +
-               "KYC submitted: PAN ABCDE1234F, IFSC SBIN0001234, card 4111 1111 1111 1111";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const sleep=ms=>new Promise(r=>setTimeout(r,reduced?0:ms));
+const post=(o,h={})=>({method:'POST',headers:{'Content-Type':'application/json',...h},body:JSON.stringify(o)});
+async function api(path,opts){const r=await fetch(path,opts);if(!r.ok)throw new Error(path+" -> "+r.status+" "+(await r.text()).slice(0,200));return r}
+const SAMPLE="2026-10-31 INFO user=Ravi Kumar email=ravi.k@example.com phone=+91 98765 43210 login from 10.20.30.40\nKYC submitted: Aadhaar 2345 6789 0124, PAN ABCDE1234F, IFSC SBIN0001234, card 4111 1111 1111 1111";
 
-async function api(path, opts) {
-  const r = await fetch(path, opts);
-  if (!r.ok) throw new Error(path + " -> " + r.status + " " + (await r.text()).slice(0, 200));
-  return r;
-}
-function esc(s) { return String(s ?? "").replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function show(id){document.querySelectorAll('[role=tab]').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===id));
+  document.querySelectorAll('.panel').forEach(p=>p.hidden=p.id!=='p-'+id)}
+document.querySelectorAll('[role=tab]').forEach(b=>b.onclick=()=>show(b.dataset.tab));
 
-async function loadDefault() {
-  const r = await (await api("/api/recipes/default")).json();
-  $("recipe").value = JSON.stringify(r, null, 2);
-}
-function recipe() { return JSON.parse($("recipe").value); }
+const recipe=()=>JSON.parse($("recipe").value);
+function renderRules(){
+  try{$("rules").innerHTML=recipe().rules.map(x=>`<tr><td>${esc(x.type)}</td><td><span class="pill ${esc(x.action).toLowerCase()}">${esc(x.action)}</span></td><td>${esc((x.columns||[]).length?"columns: "+x.columns.join(", "):(x.patterns||[]).length?x.patterns.length+" patterns":"everywhere")}</td></tr>`).join("")}
+  catch{$("rules").innerHTML='<tr><td colspan="3" class="bad">The recipe is not valid JSON</td></tr>'}}
+async function loadDefault(){$("recipe").value=JSON.stringify(await (await api("/api/recipes/default")).json(),null,2);renderRules()}
+$("recipe").oninput=renderRules;
 
-$("btnMask").onclick = async () => {
-  try {
-    const r = await (await api("/api/mask/text", {
-      method: "POST", headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ text: $("inText").value, recipe: recipe() })
-    })).json();
-    $("outText").value = r.masked;
-    const st = $("textStatus");
-    st.style.display = "inline-block";
-    st.className = "pill " + (r.residualFindings === 0 ? "ok" : "bad");
-    st.textContent = r.totalFindings + " findings, residual scan: " + r.residualFindings;
-    const rows = Object.entries(r.summary).map(([k, v]) => `<tr><td>${esc(k)}</td><td>${v}</td></tr>`).join("");
-    $("textSummary").innerHTML = rows ? `<table><tr><th>Type / action</th><th>Count</th></tr>${rows}</table>` : "";
-  } catch (e) { alert(e.message); }
+function pipe(a,b,c,d,cls){$("stats").innerHTML=`<div class="pipe">
+  <div class="stage ${cls||''}"><i>1 Detect</i><b>${a}</b><span>values found</span></div>
+  <div class="stage ${cls||''}"><i>2 Decide</i><b>${b}</b><span>rules used</span></div>
+  <div class="stage ${cls||''}"><i>3 Apply</i><b>${c}</b><span>values replaced</span></div>
+  <div class="stage ${cls?(d?'badc':'okc'):''}"><i>4 Verify</i><b>${d}</b><span>left in the output</span></div></div>`}
+pipe("-","-","-","-");
+
+const CHIPS=/(TKN_[A-Z]+_[0-9a-f]{12})|(HASH_[0-9a-f]{24})|(\[REDACTED:[A-Z0-9]+\])|(\w\*\*\*@[\w.-]+|X{2,}[X \-]*\d{4}|\b\w\*{2,})/g;
+function chips(text){return esc(text).replace(CHIPS,(m,t,h,r)=>t?`<button class="chip tok" data-token="${m}">${m}</button>`:h?`<span class="chip hash">${m}</span>`:r?`<span class="chip red">${m}</span>`:`<span class="chip mask">${m}</span>`)}
+
+$("btnMask").onclick=async()=>{
+  try{
+    const text=$("inText").value,rc=recipe();
+    const [m,d]=await Promise.all([api("/api/mask/text",post({text,recipe:rc})).then(r=>r.json()),api("/api/detect",post({text})).then(r=>r.json())]);
+    const act=Object.fromEntries(rc.rules.filter(r=>!(r.columns||[]).length).map(r=>[r.type,r.action]));
+    let h="",i=0;
+    for(const f of d){if(f.start<i)continue;h+=esc(text.slice(i,f.start))+`<mark class="${act[f.type]?'':'none'}">${esc(text.slice(f.start,f.end))}<small>${f.type}</small></mark>`;i=f.end}
+    $("orig").innerHTML=h+esc(text.slice(i));$("masked").innerHTML=chips(m.masked);$("results").hidden=false;
+    pipe(m.totalFindings,Object.keys(m.summary).length,m.totalFindings,m.residualFindings,"live");
+    const rows=Object.entries(m.summary).map(([k,v])=>{const[t,a]=k.split("/");return`<tr><td>${esc(t)}</td><td><span class="pill ${a.toLowerCase()}">${esc(a)}</span></td><td>${v}</td></tr>`}).join("");
+    $("summary").innerHTML=rows?`<div class="card"><table><tr><th>Type</th><th>Action</th><th>Count</th></tr>${rows}</table></div>`:"";
+  }catch(e){alert(e.message)}
 };
 
-$("btnFile").onclick = async () => {
-  const f = $("file").files[0];
-  if (!f) { alert("Choose a file first"); return; }
-  try {
-    const fd = new FormData();
-    fd.append("file", f);
-    fd.append("recipe", $("recipe").value);
-    const j = await (await api("/api/mask/file", { method: "POST", body: fd })).json();
-    $("jobBox").innerHTML = `
-      <table>
-        <tr><th>Job</th><td>${esc(j.id)}</td></tr>
-        <tr><th>Status</th><td class="${j.status === 'CLEAN' ? 'ok' : 'bad'}">${esc(j.status)}</td></tr>
-        <tr><th>Rows</th><td>${j.rowsTotal} total, ${j.rowsWithPii} with PII</td></tr>
-        <tr><th>Findings</th><td>${j.findingsTotal} (residual ${j.residualFindings})</td></tr>
-        <tr><th>Output SHA-256</th><td><code>${esc(j.outputSha256)}</code></td></tr>
-        <tr><th>Downloads</th><td>
-          <a href="/api/jobs/${j.id}/download">masked file</a> |
-          <a href="/api/jobs/${j.id}/audit" target="_blank">audit (JSON)</a> |
-          <a href="/api/jobs/${j.id}/audit?format=csv">audit (CSV)</a></td></tr>
-      </table>`;
-  } catch (e) { alert(e.message); }
+$("btnFile").onclick=async()=>{
+  const f=$("file").files[0];if(!f){alert("Choose a file first");return}
+  try{
+    const fd=new FormData();fd.append("file",f);fd.append("recipe",$("recipe").value);
+    const j=await (await api("/api/mask/file",{method:"POST",body:fd})).json();
+    $("jobBox").innerHTML=`<div class="tiles"><div class="tile"><b class="${j.status==='CLEAN'?'ok':'bad'}">${esc(j.status)}</b><span>status</span></div>
+      <div class="tile"><b>${j.rowsWithPii}/${j.rowsTotal}</b><span>rows with PII</span></div>
+      <div class="tile"><b>${j.findingsTotal}</b><span>values found, ${j.residualFindings} left</span></div></div>
+      <p class="note">Output SHA-256: <code>${esc(j.outputSha256)}</code></p>
+      <div class="row"><a class="btn ghost" href="/api/jobs/${j.id}/download">Download masked file</a>
+      <a class="btn ghost" href="/api/jobs/${j.id}/audit" target="_blank">Audit (JSON)</a>
+      <a class="btn ghost" href="/api/jobs/${j.id}/audit?format=csv">Audit (CSV)</a></div>`;
+  }catch(e){alert(e.message)}
 };
 
-$("btnDetok").onclick = async () => {
-  try {
-    const r = await (await api("/api/vault/detokenize", {
-      method: "POST", headers: {"Content-Type": "application/json", "X-API-Key": $("apikey").value},
-      body: JSON.stringify({ token: $("token").value.trim() })
-    })).json();
-    $("detokOut").innerHTML = "Original: <code>" + esc(r.value) + "</code>";
-  } catch (e) { $("detokOut").innerHTML = '<span class="bad">' + esc(e.message) + '</span>'; }
+/* Decryption lab */
+const LABEL={method:"Method",granted:"Access granted",piiType:"PII type",storedBytes:"Stored bytes",createdAt:"Created",layout:"Layout",demoNote:"Demo",
+  ivHex:"IV (nonce)",ciphertextHex:"Ciphertext",tagHex:"Auth tag",derivation:"Derivation",source:"Source",keyFingerprint:"Key fingerprint",
+  algorithm:"Algorithm",tagBits:"Tag bits",plaintextBytes:"Plaintext bytes",error:"Error",plaintextReleased:"Plaintext released",lookup:"Lookup"};
+const CLS={ivHex:"iv",ciphertextHex:"ct",tagHex:"tag"},WORD={ok:"passed",fail:"stopped here",skipped:"not reached"};
+function stepHtml(s,i){
+  const rows=Object.entries(s.data||{}).map(([k,v])=>`<dt>${esc(LABEL[k]||k)}</dt><dd class="${CLS[k]||''}">${esc(v)}</dd>`).join("");
+  return`<li class="step ${s.status}"><span class="n">${i+1}</span><div><h3>${esc(s.title)}<em>${WORD[s.status]}</em></h3><p>${esc(s.explain)}</p>${rows?`<dl>${rows}</dl>`:""}</div></li>`}
+const OUT={DENIED:"Access denied. The encrypted bytes were never read.",UNKNOWN_TOKEN:"Unknown token. There is nothing to decrypt.",
+  TAG_MISMATCH:"The tag did not match, so no plaintext was released.",DECRYPTED:"Decrypted, but this scenario never shows the value."};
+$("btnLab").onclick=async()=>{
+  const btn=$("btnLab"),out=$("labOut"),list=$("steps"),anat=$("anat");
+  btn.disabled=true;list.innerHTML="";anat.hidden=true;out.className="";out.innerHTML="";
+  try{
+    const r=await fetch("/api/vault/trace",post({token:$("token").value,scenario:document.querySelector('[name=sc]:checked').value},{"X-API-Key":$("apikey").value}));
+    const t=await r.json().catch(()=>null);
+    if(!t||!t.steps){out.className="out bad";out.textContent="The request was rejected ("+r.status+"). Check the token field.";return}
+    for(let i=0;i<t.steps.length;i++){
+      list.insertAdjacentHTML("beforeend",stepHtml(t.steps[i],i));
+      const d=t.steps[i].data||{};
+      if(d.ciphertextHex!==undefined){const n=d.ciphertextHex.length/2;
+        anat.innerHTML=`<div class="iv" style="flex:12">IV 12 B</div><div class="ct" style="flex:${Math.max(n,10)}">Ciphertext ${n} B</div><div class="tag" style="flex:16">Tag 16 B</div>`;anat.hidden=false}
+      await sleep(600);
+    }
+    if(t.outcome==="DECRYPTED"&&t.plaintext!=null){
+      out.className="out";out.innerHTML='<div class="note" style="margin:0 0 8px">Original value</div><div class="reveal" id="rv"><code id="pt"></code><i></i></div>';
+      $("pt").textContent=t.plaintext;await sleep(250);$("rv").classList.add("open")}
+    else{out.className="out bad";out.textContent=OUT[t.outcome]||"Stopped."}
+  }catch(e){out.className="out bad";out.textContent=e.message}
+  finally{btn.disabled=false}
 };
+$("btnRestore").onclick=async()=>{
+  const f=$("rfile").files[0],msg=$("restoreMsg");msg.className="note";
+  if(!f){msg.textContent="Choose a masked file first.";return}
+  try{
+    const fd=new FormData();fd.append("file",f);
+    const r=await fetch("/api/vault/restore",{method:"POST",headers:{"X-API-Key":$("apikey").value},body:fd});
+    if(!r.ok){msg.className="note bad";msg.textContent=r.status===403?"Access denied. Enter the admin key above.":"Restore failed ("+r.status+").";return}
+    const ok=+r.headers.get("X-Restored-Count"),miss=+r.headers.get("X-Unresolved-Count");
+    const name=(r.headers.get("Content-Disposition")||"").match(/filename="([^"]+)"/)?.[1]||"restored.txt";
+    const a=document.createElement("a");a.href=URL.createObjectURL(await r.blob());a.download=name;a.click();
+    msg.className="note "+(miss?"bad":"ok");
+    msg.textContent=ok+" values restored"+(miss?", "+miss+" tokens not found in this vault":"")+(ok||miss?".":". No tokens were found, so the file is unchanged.");
+  }catch(e){msg.className="note bad";msg.textContent=e.message}
+};
+document.addEventListener("click",e=>{const b=e.target.closest("[data-token]");if(!b)return;
+  $("token").value=b.dataset.token;show("lab");$("apikey").focus()});
 
-$("btnReset").onclick = loadDefault;
-$("inText").value = SAMPLE;
+$("btnReset").onclick=loadDefault;
+$("inText").value=SAMPLE;
 loadDefault();
 </script>
 </body>
