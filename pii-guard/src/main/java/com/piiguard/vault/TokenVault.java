@@ -1,14 +1,15 @@
 package com.piiguard.vault;
 
+import java.util.Optional;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.piiguard.action.TokenStore;
 import com.piiguard.crypto.AesGcm;
 import com.piiguard.crypto.Hmac;
 import com.piiguard.detect.PiiType;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Optional;
-import java.util.UUID;
 
 /** Deterministic tokenization: same value -> same token. Original value stored AES-GCM encrypted. */
 @Service
@@ -36,4 +37,7 @@ public class TokenVault implements TokenStore {
     public Optional<String> detokenize(String token) {
         return repo.findByToken(token).map(e -> aes.decrypt(e.getValueCipher()));
     }
+
+    @Transactional(readOnly = true)
+    public Optional<VaultEntry> find(String token) { return repo.findByToken(token); }
 }

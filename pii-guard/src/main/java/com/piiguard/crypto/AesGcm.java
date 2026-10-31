@@ -1,13 +1,16 @@
 package com.piiguard.crypto;
 
-import javax.crypto.Cipher;
-import javax.crypto.spec.GCMParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
+import java.util.Arrays;
+import java.util.HexFormat;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 /** AES-256-GCM. Output layout: 12-byte IV || ciphertext+tag. */
 public class AesGcm {
@@ -49,5 +52,28 @@ public class AesGcm {
         } catch (GeneralSecurityException e) {
             throw new IllegalStateException("Decryption failed", e);
         }
+    }
+
+    /** The three parts of a stored blob (JCE appends the 16-byte tag to the ciphertext). */
+    public record Parts(byte[] iv, byte[] ciphertext, byte[] tag) {}
+
+    public Parts split(byte[] blob) {
+        if (blob.length < 12 + 16) throw new IllegalArgumentException("blob too short");
+        return new Parts(Arrays.copyOfRange(blob, 0, 12),
+            Arrays.copyOfRange(blob, 12, blob.length - 16),
+            Arrays.copyOfRange(blob, blob.length - 16, blob.length));
+    }
+
+    public static byte[] join(Parts p) {
+        return ByteBuffer.allocate(p.iv().length + p.ciphertext().length + p.tag().length)
+            .put(p.iv()).put(p.ciphertext()).put(p.tag()).array();
+    }
+
+    /** Safe to display: first 4 bytes of SHA-256(key). Never the key itself. */
+    public String keyFingerprint() {
+        try {
+            byte[] d = MessageDigest.getInstance("SHA-256").digest(key.getEncoded());
+            return HexFormat.of().formatHex(d, 0, 4);
+        } catch (GeneralSecurityException e) { throw new IllegalStateException(e); }
     }
 }
