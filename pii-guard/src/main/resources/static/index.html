@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PII Guard</title>
+<style>
+  :root { --bg:#f7f8fa; --card:#fff; --text:#1c2330; --muted:#667085; --line:#e4e7ec; --accent:#1f6feb; --ok:#1a7f37; --bad:#c62828; --code:#f2f4f7; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#10141b; --card:#171c25; --text:#e6e9ef; --muted:#9aa4b2; --line:#2a3140; --accent:#58a6ff; --ok:#3fb950; --bad:#f85149; --code:#0d1117; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background:var(--bg); color:var(--text); }
+  header { padding:20px 24px; border-bottom:1px solid var(--line); background:var(--card); }
+  header h1 { margin:0; font-size:20px; } header p { margin:4px 0 0; color:var(--muted); font-size:14px; }
+  main { max-width:1100px; margin:0 auto; padding:20px; display:grid; gap:16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px; }
+  .card h2 { margin:0 0 10px; font-size:16px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  @media (max-width:800px) { .grid { grid-template-columns:1fr; } }
+  textarea { width:100%; min-height:160px; font-family:ui-monospace, Menlo, Consolas, monospace; font-size:13px; padding:10px;
+    border:1px solid var(--line); border-radius:8px; background:var(--code); color:var(--text); resize:vertical; }
+  label { font-size:12px; color:var(--muted); display:block; margin-bottom:4px; }
+  button { background:var(--accent); color:#fff; border:0; border-radius:8px; padding:9px 16px; font-size:14px; cursor:pointer; }
+  button.secondary { background:transparent; color:var(--accent); border:1px solid var(--accent); }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:10px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; margin-top:8px; }
+  th, td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); }
+  .pill { display:inline-block; padding:2px 8px; border-radius:99px; font-size:12px; border:1px solid var(--line); }
+  .ok { color:var(--ok); } .bad { color:var(--bad); }
+  pre { margin:0; white-space:pre-wrap; word-break:break-word; }
+  a { color:var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <h1>PII Guard</h1>
+  <p>Detect, mask, hash or tokenize PII before data leaves the company. Audit trail included.</p>
+</header>
+<main>
+  <section class="card">
+    <h2>1. Mask text or logs</h2>
+    <div class="grid">
+      <div><label>Input</label><textarea id="inText"></textarea></div>
+      <div><label>Masked output</label><textarea id="outText" readonly></textarea></div>
+    </div>
+    <div class="row">
+      <button id="btnMask">Mask text</button>
+      <span id="textStatus" class="pill" style="display:none"></span>
+    </div>
+    <div id="textSummary"></div>
+  </section>
+
+  <section class="card">
+    <h2>2. Mask a file (CSV or log)</h2>
+    <div class="row">
+      <input type="file" id="file" accept=".csv,.txt,.log,.json">
+      <button id="btnFile">Upload and mask</button>
+    </div>
+    <div id="jobBox"></div>
+  </section>
+
+  <section class="card">
+    <h2>Recipe (JSON)</h2>
+    <label>Each rule: type (AADHAAR, PHONE, EMAIL, PAN, IFSC, CARD, IPV4, NAME), action (MASK, HASH, TOKENIZE, REDACT), optional columns</label>
+    <textarea id="recipe" style="min-height:240px"></textarea>
+    <div class="row"><button class="secondary" id="btnReset">Reset to default</button></div>
+  </section>
+
+  <section class="card">
+    <h2>Detokenize (privileged)</h2>
+    <div class="row">
+      <input id="token" placeholder="TKN_AADHAAR_..." size="30">
+      <input id="apikey" placeholder="X-API-Key" type="password" size="20">
+      <button class="secondary" id="btnDetok">Reveal original</button>
+    </div>
+    <div id="detokOut" style="margin-top:8px"></div>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const SAMPLE = "2024-10-31 INFO user=Ravi Kumar email=ravi.k@example.com phone=+91 98765 43210 login from 10.20.30.40\n" +
+               "KYC submitted: PAN ABCDE1234F, IFSC SBIN0001234, card 4111 1111 1111 1111";
+
+async function api(path, opts) {
+  const r = await fetch(path, opts);
+  if (!r.ok) throw new Error(path + " -> " + r.status + " " + (await r.text()).slice(0, 200));
+  return r;
+}
+function esc(s) { return String(s ?? "").replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+async function loadDefault() {
+  const r = await (await api("/api/recipes/default")).json();
+  $("recipe").value = JSON.stringify(r, null, 2);
+}
+function recipe() { return JSON.parse($("recipe").value); }
+
+$("btnMask").onclick = async () => {
+  try {
+    const r = await (await api("/api/mask/text", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ text: $("inText").value, recipe: recipe() })
+    })).json();
+    $("outText").value = r.masked;
+    const st = $("textStatus");
+    st.style.display = "inline-block";
+    st.className = "pill " + (r.residualFindings === 0 ? "ok" : "bad");
+    st.textContent = r.totalFindings + " findings, residual scan: " + r.residualFindings;
+    const rows = Object.entries(r.summary).map(([k, v]) => `<tr><td>${esc(k)}</td><td>${v}</td></tr>`).join("");
+    $("textSummary").innerHTML = rows ? `<table><tr><th>Type / action</th><th>Count</th></tr>${rows}</table>` : "";
+  } catch (e) { alert(e.message); }
+};
+
+$("btnFile").onclick = async () => {
+  const f = $("file").files[0];
+  if (!f) { alert("Choose a file first"); return; }
+  try {
+    const fd = new FormData();
+    fd.append("file", f);
+    fd.append("recipe", $("recipe").value);
+    const j = await (await api("/api/mask/file", { method: "POST", body: fd })).json();
+    $("jobBox").innerHTML = `
+      <table>
+        <tr><th>Job</th><td>${esc(j.id)}</td></tr>
+        <tr><th>Status</th><td class="${j.status === 'CLEAN' ? 'ok' : 'bad'}">${esc(j.status)}</td></tr>
+        <tr><th>Rows</th><td>${j.rowsTotal} total, ${j.rowsWithPii} with PII</td></tr>
+        <tr><th>Findings</th><td>${j.findingsTotal} (residual ${j.residualFindings})</td></tr>
+        <tr><th>Output SHA-256</th><td><code>${esc(j.outputSha256)}</code></td></tr>
+        <tr><th>Downloads</th><td>
+          <a href="/api/jobs/${j.id}/download">masked file</a> |
+          <a href="/api/jobs/${j.id}/audit" target="_blank">audit (JSON)</a> |
+          <a href="/api/jobs/${j.id}/audit?format=csv">audit (CSV)</a></td></tr>
+      </table>`;
+  } catch (e) { alert(e.message); }
+};
+
+$("btnDetok").onclick = async () => {
+  try {
+    const r = await (await api("/api/vault/detokenize", {
+      method: "POST", headers: {"Content-Type": "application/json", "X-API-Key": $("apikey").value},
+      body: JSON.stringify({ token: $("token").value.trim() })
+    })).json();
+    $("detokOut").innerHTML = "Original: <code>" + esc(r.value) + "</code>";
+  } catch (e) { $("detokOut").innerHTML = '<span class="bad">' + esc(e.message) + '</span>'; }
+};
+
+$("btnReset").onclick = loadDefault;
+$("inText").value = SAMPLE;
+loadDefault();
+</script>
+</body>
+</html>

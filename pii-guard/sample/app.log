@@ -1,0 +1,4 @@
+2026-10-31 10:02:11 INFO  login ok user=ravi.kumar@example.com ip=10.0.0.12
+2026-10-31 10:02:15 WARN  OTP sent to +91 98765 43210 for PAN ABCDE1234F
+2026-10-31 10:03:40 INFO  payment card 4111 1111 1111 1111 IFSC SBIN0001234
+2026-10-31 10:04:01 INFO  healthcheck ok

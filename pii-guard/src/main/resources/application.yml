@@ -1,0 +1,30 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: pii-guard
+  datasource:
+    # Default: file-based H2 so tokens and audit survive restarts.
+    # For PostgreSQL set SPRING_DATASOURCE_URL / USERNAME / PASSWORD (see docker-compose.yml).
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:file:./data/piiguard;AUTO_SERVER=TRUE}
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  servlet:
+    multipart:
+      max-file-size: 200MB
+      max-request-size: 200MB
+  h2:
+    console:
+      enabled: false
+
+piiguard:
+  # CHANGE THESE in any real deployment (env vars), and keep them in a secrets manager.
+  hmac-secret: ${PIIGUARD_HMAC_SECRET:dev-only-hmac-secret-change-me}
+  vault-secret: ${PIIGUARD_VAULT_SECRET:dev-only-vault-secret-change-me}
+  admin-key: ${PIIGUARD_ADMIN_KEY:dev-admin-key}
+  output-dir: ${PIIGUARD_OUTPUT_DIR:./data/output}
